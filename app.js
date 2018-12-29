@@ -21,7 +21,7 @@ routeUpload(app);
 routeBundle(app);
 routeIndex(app);
 
-var port = process.env.PORT || 5000;
-app.listen(port, function() {
-    console.log('Listening on ' + port);
+var port = process.env.PORT || 9875;
+app.listen(port, 'localhost', () => {
+    console.log('Listening on localhost:' + port);
 });

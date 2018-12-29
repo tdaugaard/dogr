@@ -1,19 +1,35 @@
+const TinyColor = require('tinycolor2')
+
 var fontName = 'Comic Sans MS, doge, Marker Felt, Sans';
-var fontSize = 30;
-var palette = ['darkcyan', 'turquoise', 'maroon', 'navy', 'red', 'green', 'fuchsia', 'crimson', 'indigo', 'yellow'];
+var palette = ['fuchsia', 'orange', 'yellow', 'turquoise', 'maroon', 'blue', 'red', 'lime', 'crimson', 'indigo']
+
+console.log("Colors available", palette)
 
 module.exports = function(options){
     var canvas = options.canvas,
         ctx = canvas.getContext('2d'),
         font = options.font,
+        fontSize = options.fontSize || 45,
         dogeImgURL = options.imgURL,
         img = new options.imageClass(),
         imageWidth,
         imageHeight,
+        colorsUsed = [],
         lineSectionHeight; // height available to a single line
 
-    function initCanvas(){
-        ctx.drawImage(img, 0, 0, img.width, img.height); //clears the canvas
+    function initCanvas() {
+        let posX = 0
+
+        // Flip image
+        ctx.save()
+        if (Math.random() >= 0.5) {
+            ctx.scale(-1, 1)
+            posX = -img.width
+        }
+
+        ctx.drawImage(img, posX, 0, img.width, img.height); //clears the canvas
+        ctx.restore()
+
         ctx.font =  fontSize + 'px ' + fontName;
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
@@ -21,7 +37,6 @@ module.exports = function(options){
 
     if (font) {
         fontName = font.name;
-        console.log('Using font: ' + fontName);
         ctx.addFont(font);
     }
 
@@ -39,16 +54,24 @@ module.exports = function(options){
     img.src = dogeImgURL;
 
     function addLineToCanvas (text, lineIndex){
-        var textWidth = ctx.measureText(text).width,
-            xMax = imageWidth - textWidth,
-            yMin = lineIndex * lineSectionHeight,
-            xPos = Math.random() * xMax,
-            yPos = yMin + Math.random() * (lineSectionHeight - fontSize),
-            fillStyle = palette[Math.floor(( Math.random() * 1000 ) % palette.length)];
+        const textWidth = ctx.measureText(text).width
+        const xMax = imageWidth - textWidth
+        const yMin = lineIndex * lineSectionHeight
+        const xPos = Math.random() * xMax
+        const yPos = yMin + Math.random() * (lineSectionHeight - fontSize)
+        const fillStyle = getRandomColor()
+        const strokeStyle = TinyColor(fillStyle)
+            .complement()
+            .darken()
+            .toHexString()
 
-        ctx.fillStyle = fillStyle;
+        ctx.strokeStyle = strokeStyle
+        ctx.lineWidth = 4;
+        ctx.miterLimit = 2;
+        ctx.strokeText(text, xPos, yPos);
+        ctx.fillStyle = fillStyle
         ctx.fillText(text, xPos, yPos);
-
+            
         return {
             fillStyle: fillStyle,
             text: text,
@@ -56,13 +79,27 @@ module.exports = function(options){
             yPos: yPos
         }
     }
+    function getRandomColor() {
+        var color, index
+
+        do {
+            index = Math.floor(( Math.random() * 1000 ) % palette.length);
+        } while (colorsUsed.indexOf(index) !== -1)
+
+        colorsUsed.push(index)
+
+        return palette[index]
+    }
 
     return {
         addLines: function(lines){
             initCanvas();
+            colorsUsed = [];
             // Divide the image into vertical 'sections' so lines don't overlap
             lineSectionHeight = imageHeight / lines.length;
-            return lines.map(addLineToCanvas);
+            var x = lines.map(addLineToCanvas);
+            
+            return x;
         },
 
         fillCanvasFromData: function(dataArray){
